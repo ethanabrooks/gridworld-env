@@ -2,11 +2,13 @@ from pathlib import Path
 import json
 
 from gym.envs import register
-from gridworld.gridworld import Gridworld, parse_json
+from gridworld.gridworld import Gridworld
 
 
 def register_from_string(id, string):
     obj = json.loads(string)
+
+    import ipdb; ipdb.set_trace()
     register(
         id=id,
         entry_point=f'{Gridworld.__module__}:{Gridworld.__name__}',
