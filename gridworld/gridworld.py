@@ -19,10 +19,10 @@ Transition = namedtuple('Transition', 'probability new_state reward terminal')
 class Gridworld(DiscreteEnv):
     transition_strings = {
         (0, 0): '🛑',
-        (0, 1): '⬇',
-        (1, 0): '➡',
-        (0, -1): '⬅',
-        (-1, 0): '⬆'
+        (0, 1): '👉',
+        (1, 0): '👇',
+        (0, -1): '👈',
+        (-1, 0): '👆'
     }
 
     def __init__(
@@ -103,7 +103,7 @@ class Gridworld(DiscreteEnv):
                     a_max=np.array(desc.shape, dtype=int) - 1,
                 )
 
-                if desc[i, j] in self.blocked:
+                if desc[tuple(new_state)] in self.blocked:
                     new_state = (i, j)
                 yield Transition(
                     probability=probability,
@@ -121,33 +121,38 @@ class Gridworld(DiscreteEnv):
         self.nS = desc.size
 
     def reset(self):
+        for random in self.random:
+            # randomize states in self.random
+            states_to_move = self.desc == random
+            rows, columns = np.meshgrid(
+                *(range(x) for x in self.desc.shape), indexing='ij')
+            old_rows, old_cols = rows[states_to_move], columns[states_to_move]
 
-        # randomize states in self.random
-        states_to_move = np.isin(self.desc, self.random)
-        rows, columns = np.meshgrid(
-            *(range(x) for x in self.desc.shape), indexing='ij')
-        old_rows, old_cols = rows[states_to_move], columns[states_to_move]
+            # exclude blocked stated
+            blocked = np.isin(self.desc.flatten(), self.blocked)
+            potential_new, = np.where(np.logical_not(blocked))
 
-        import ipdb
-        ipdb.set_trace()
+            # randomly choose non-blocked states
+            choice = np.random.choice(
+                potential_new,
+                size=np.count_nonzero(states_to_move),
+                replace=False)
+            new_rows, new_cols = zip(*[self.decode(i) for i in choice])
 
-        # exclude blocked stated
-        blocked = np.isin(self.desc.flatten(), self.blocked)
-        potential_new, = np.where(np.logical_not(blocked))
-
-        # randomly choose non-blocked states
-        choice = np.random.choice(
-            potential_new,
-            size=np.count_nonzero(states_to_move),
-            replace=False)
-        new_rows, new_cols = zip(*[self.decode(i) for i in choice])
-
-        # swap old states and new states
-        self.desc[old_rows, old_cols], self.desc[new_rows, new_cols] = \
-            self.desc[new_rows, new_cols], self.desc[old_rows, old_cols]
+            # swap old states and new states
+            swap = self.desc[new_rows, new_cols]
+            self.desc[new_rows, new_cols] = self.desc[old_rows, old_cols]
+            self.desc[old_rows, old_cols] = swap
 
         self.set_desc(self.desc)
+        self.last_transition = None
         return super().reset()
+
+    def step(self, a):
+        prev = self.decode(self.s)
+        s, r, t, i = super().step(a)
+        self.last_transition = np.array(self.decode(s)) - np.array(prev)
+        return s, r, t, i
 
     def render(self, mode='human'):
         outfile = StringIO() if mode == 'ansi' else sys.stdout
@@ -156,12 +161,15 @@ class Gridworld(DiscreteEnv):
 
         out[i][j] = utils.colorize(out[i][j], 'blue', highlight=True)
 
+        print('#' * (len(out[0]) + 2))
         for row in out:
-            print("".join(row))
+            print('#' + "".join(row) + '#')
+        print('#' * (len(out[0]) + 2))
         if self.last_transition is not None:
             transition_string = Gridworld.transition_strings[tuple(
                 self.last_transition)]
-            print(f"({transition_string})\n")
+
+            print(transition_string)
         else:
             print("\n")
         # No need to return anything for human
@@ -211,10 +219,15 @@ class Gridworld(DiscreteEnv):
 
 
 if __name__ == '__main__':
-    with Path('0x4.json').open() as f:
+    with Path('4x4.json').open() as f:
         env = Gridworld(**json.load(f))
+
     env.reset()
     while True:
         env.render()
         time.sleep(1)
-        env.step(env.action_space.sample())
+        s, r, t, i = env.step(env.action_space.sample())
+        print('reward', r)
+        if t:
+            print('reset')
+            env.reset()
