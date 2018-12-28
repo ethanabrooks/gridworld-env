@@ -2,16 +2,14 @@ from pathlib import Path
 import json
 
 from gym.envs import register
-from gridworld.gridworld import Gridworld
+from gridworld.gridworld import GridWorld
 
 
 def register_from_string(id, string):
     obj = json.loads(string)
-
-    import ipdb; ipdb.set_trace()
     register(
         id=id,
-        entry_point=f'{Gridworld.__module__}:{Gridworld.__name__}',
+        entry_point=f'{GridWorld.__module__}:{GridWorld.__name__}',
         trials=obj.pop('trials', 1),
         reward_threshold=obj.pop('reward_threshold', None),
         local_only=False,
@@ -22,8 +20,9 @@ def register_from_string(id, string):
 
 def register_from_path(path: Path):
     with path.open() as f:
-        register_from_string(path.name, f.read())
+        id = ''.join([word.capitalize() for word in path.stem.split('-')])
+        register_from_string(id + 'GridWorld-v0', f.read())
 
 
-for json_file in Path('json').iterdir():
+for json_file in Path(__file__).parent.joinpath('json').iterdir():
     register_from_path(json_file)

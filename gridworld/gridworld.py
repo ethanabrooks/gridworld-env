@@ -16,11 +16,11 @@ from six import StringIO
 Transition = namedtuple('Transition', 'probability new_state reward terminal')
 
 
-class Gridworld(DiscreteEnv):
+class GridWorld(DiscreteEnv):
     transition_strings = {
-        (0, 0): '🛑',
-        (0, 1): '👉',
-        (1, 0): '👇',
+        (0, 0):  '🛑',
+        (0, 1):  '👉',
+        (1, 0):  '👇',
         (0, -1): '👈',
         (-1, 0): '👆'
     }
@@ -103,7 +103,7 @@ class Gridworld(DiscreteEnv):
                     a_max=np.array(desc.shape, dtype=int) - 1,
                 )
 
-                if desc[tuple(new_state)] in self.blocked:
+                if np.all(np.isin(desc[tuple(new_state)], self.blocked)):
                     new_state = (i, j)
                 yield Transition(
                     probability=probability,
@@ -166,7 +166,7 @@ class Gridworld(DiscreteEnv):
             print('#' + "".join(row) + '#')
         print('#' * (len(out[0]) + 2))
         if self.last_transition is not None:
-            transition_string = Gridworld.transition_strings[tuple(
+            transition_string = GridWorld.transition_strings[tuple(
                 self.last_transition)]
 
             print(transition_string)
@@ -196,12 +196,12 @@ class Gridworld(DiscreteEnv):
                 trans: Transition
                 for trans in transitions:
                     self._transition_matrix[s1, a, trans.
-                                            new_state] = trans.probability
+                        new_state] = trans.probability
                     self._reward_matrix[s1, a] = trans.reward
                     if trans.terminal:
                         for a in range(self.nA):
                             self._transition_matrix[trans.new_state, a, trans.
-                                                    new_state] = 1
+                                new_state] = 1
                             self._reward_matrix[trans.new_state, a] = 0
                             assert not np.any(self._transition_matrix > 1)
 
@@ -220,7 +220,7 @@ class Gridworld(DiscreteEnv):
 
 if __name__ == '__main__':
     with Path('4x4.json').open() as f:
-        env = Gridworld(**json.load(f))
+        env = GridWorld(**json.load(f))
 
     env.reset()
     while True:
