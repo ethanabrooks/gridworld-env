@@ -170,8 +170,6 @@ class GridWorld(DiscreteEnv):
                 self.last_transition)]
 
             print(transition_string)
-        else:
-            print("\n")
         # No need to return anything for human
         if mode != 'human':
             return outfile

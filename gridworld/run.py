@@ -1,5 +1,6 @@
 import argparse
 import time
+import gridworld
 
 import gym
 
@@ -14,12 +15,13 @@ def run(env):
     env.reset()
     while True:
         env.render()
-        time.sleep(1)
         s, r, t, i = env.step(env.action_space.sample())
         print('reward', r)
         if t:
             print('resetting')
             env.reset()
+            print()
+        time.sleep(1)
 
 
 if __name__ == '__main__':
