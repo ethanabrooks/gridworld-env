@@ -6,7 +6,8 @@ from setuptools import find_packages, setup
 setup(
     name='gridworld-env',
     version='0.0.0',
-    description='A customizable library of gridworlds conforming to the OpenAI Gym (https://gym.openai.com/) API'
+    description=
+    'A customizable library of gridworlds conforming to the OpenAI Gym (https://gym.openai.com/) API',
     url='https://github.com/lobachevzky/gridworld-env',
     author='Ethan Brooks',
     author_email='ethanabrooks@gmail.com',
