@@ -107,7 +107,7 @@ class GridWorld(DiscreteEnv):
                 yield Transition(
                     probability=probability,
                     new_state=self.encode(*new_state),
-                    reward=self.reward.get(char, 0),
+                    reward=self.reward.get(new_char, 0),
                     terminal=new_char in self.terminal)
 
         return dict(get_state_transitions())
