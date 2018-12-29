@@ -12,6 +12,8 @@ def register_from_string(id, string):
         entry_point=f'{GridWorld.__module__}:{GridWorld.__name__}',
         trials=obj.pop('trials', 1),
         reward_threshold=obj.pop('reward_threshold', None),
+        max_episode_steps=obj.pop('max_episode_steps', None),
+        max_episode_seconds=obj.pop('max_episode_seconds', None),
         local_only=False,
         nondeterministic=False,
         kwargs=obj,
