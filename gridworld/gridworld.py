@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# stdlib
 import json
 import sys
 import time
@@ -8,7 +7,6 @@ from pathlib import Path
 from typing import Container, Dict, Iterable, Tuple, List
 
 import numpy as np
-# third party
 from gym import utils
 from gym.envs.toy_text.discrete import DiscreteEnv
 from six import StringIO
@@ -18,9 +16,9 @@ Transition = namedtuple('Transition', 'probability new_state reward terminal')
 
 class GridWorld(DiscreteEnv):
     transition_strings = {
-        (0, 0):  '🛑',
-        (0, 1):  '👉',
-        (1, 0):  '👇',
+        (0, 0): '🛑',
+        (0, 1): '👉',
+        (1, 0): '👇',
         (0, -1): '👈',
         (-1, 0): '👆'
     }
@@ -102,6 +100,7 @@ class GridWorld(DiscreteEnv):
                     a_min=np.zeros(2, dtype=int),
                     a_max=np.array(desc.shape, dtype=int) - 1,
                 )
+                new_char = self.desc[tuple(new_state)]
 
                 if np.all(np.isin(desc[tuple(new_state)], self.blocked)):
                     new_state = (i, j)
@@ -109,7 +108,7 @@ class GridWorld(DiscreteEnv):
                     probability=probability,
                     new_state=self.encode(*new_state),
                     reward=self.reward.get(char, 0),
-                    terminal=char in self.terminal)
+                    terminal=new_char in self.terminal)
 
         return dict(get_state_transitions())
 
@@ -194,12 +193,12 @@ class GridWorld(DiscreteEnv):
                 trans: Transition
                 for trans in transitions:
                     self._transition_matrix[s1, a, trans.
-                        new_state] = trans.probability
+                                            new_state] = trans.probability
                     self._reward_matrix[s1, a] = trans.reward
                     if trans.terminal:
                         for a in range(self.nA):
                             self._transition_matrix[trans.new_state, a, trans.
-                                new_state] = 1
+                                                    new_state] = 1
                             self._reward_matrix[trans.new_state, a] = 0
                             assert not np.any(self._transition_matrix > 1)
 
