@@ -1,5 +1,5 @@
 {
-    "text_map": ["s *"],
+    "text_map": ["s*s"],
     "transitions": [[0, 1], [0, -1]],
     "start": "s",
     "terminal": "*",
