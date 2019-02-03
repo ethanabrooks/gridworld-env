@@ -159,7 +159,7 @@ class GridWorld(DiscreteEnv):
                 self.last_transition)]
 
             print(transition_string)
-            
+
         outfile = StringIO() if mode == 'ansi' else sys.stdout
         out = self.desc.copy().tolist()
         i, j = self.decode(self.s)
