@@ -154,6 +154,12 @@ class GridWorld(DiscreteEnv):
         return s, r, t, i
 
     def render(self, mode='human'):
+        if self.last_transition is not None:
+            transition_string = GridWorld.transition_strings[tuple(
+                self.last_transition)]
+
+            print(transition_string)
+            
         outfile = StringIO() if mode == 'ansi' else sys.stdout
         out = self.desc.copy().tolist()
         i, j = self.decode(self.s)
@@ -164,11 +170,6 @@ class GridWorld(DiscreteEnv):
         for row in out:
             print('#' + "".join(row) + '#')
         print('#' * (len(out[0]) + 2))
-        if self.last_transition is not None:
-            transition_string = GridWorld.transition_strings[tuple(
-                self.last_transition)]
-
-            print(transition_string)
         # No need to return anything for human
         if mode != 'human':
             return outfile

@@ -13,9 +13,10 @@ def cli():
 
 def run(env):
     env.reset()
+    env.render()
     while True:
-        env.render()
         s, r, t, i = env.step(env.action_space.sample())
+        env.render()
         print('reward', r)
         if t:
             print('resetting')

@@ -20,11 +20,15 @@ def register_from_string(id, string):
     )
 
 
-def register_from_path(path: Path):
+def get_id(path: Path):
+    return ''.join([word.capitalize() for word in path.stem.split('-')]) \
+           + 'GridWorld-v0'
+
+
+def get_paths():
+    yield from Path(__file__).parent.joinpath('json').iterdir()
+
+
+for path in get_paths():
     with path.open() as f:
-        id = ''.join([word.capitalize() for word in path.stem.split('-')])
-        register_from_string(id + 'GridWorld-v0', f.read())
-
-
-for json_file in Path(__file__).parent.joinpath('json').iterdir():
-    register_from_path(json_file)
+        register_from_string(get_id(path), f.read())
