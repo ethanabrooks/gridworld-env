@@ -3,6 +3,7 @@ import json
 
 from gym.envs import register
 from gridworld.gridworld import GridWorld
+import gym
 
 SUFFIX = 'GridWorld-v0'
 JSON_PATH = Path(__file__).parent.joinpath('json')
@@ -28,11 +29,6 @@ def get_args(env_id):
         return json.load(f)
 
 
-def get_id(path: Path):
-    return ''.join([word.capitalize() for word in path.stem.split('-')]) \
-           + 'GridWorld-v0'
-
-
 for path in JSON_PATH.iterdir():
     with path.open() as f:
-        register_from_string(get_id(path), **json.load(f))
+        register_from_string(f'{path.stem}{SUFFIX}', **json.load(f))

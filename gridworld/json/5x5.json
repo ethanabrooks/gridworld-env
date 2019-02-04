@@ -4,9 +4,9 @@
     "     ",
     "  s  ",
     "     ",
-    "    *"
+    "     "
   ],
-  "random": "*",
+  "random": {"*":  1},
   "start": "s",
   "terminal": "*",
   "reward": {"*": 1},

@@ -16,9 +16,9 @@ Transition = namedtuple('Transition', 'probability new_state reward terminal')
 
 class GridWorld(DiscreteEnv):
     transition_strings = {
-        (0, 0): '🛑',
-        (0, 1): '👉',
-        (1, 0): '👇',
+        (0, 0):  '🛑',
+        (0, 1):  '👉',
+        (1, 0):  '👇',
         (0, -1): '👈',
         (-1, 0): '👆'
     }
@@ -32,7 +32,7 @@ class GridWorld(DiscreteEnv):
             probabilities: List[np.ndarray] = None,
             start: Iterable[str] = '',
             blocked: Container[str] = '',
-            random: Container[str] = '',
+            random: Dict[str, int] = None,
     ):
 
         if transitions is None:
@@ -57,7 +57,8 @@ class GridWorld(DiscreteEnv):
         self.terminal = np.array(list(terminal))
         self.blocked = np.array(list(blocked))
         self.start = np.array(list(start))
-        self.random = np.array(list(random))
+        self.off_limits = np.array(list(blocked + start))
+        self.random = random or dict()
         self.reward = reward
 
         self.last_transition = None
@@ -66,6 +67,7 @@ class GridWorld(DiscreteEnv):
 
         self.desc = text_map = np.array(
             [list(r) for r in text_map])  # type: np.ndarray
+        self.original_desc = self.desc.copy()
         super().__init__(
             nS=text_map.size,
             nA=len(self.actions),
@@ -113,36 +115,29 @@ class GridWorld(DiscreteEnv):
         return dict(get_state_transitions())
 
     def set_desc(self, desc):
-        assert desc.size == self.observation_space.n
         self.P = self.get_transitions(desc)
         self.isd = self.get_isd(desc)
         self.last_transition = None  # for rendering
         self.nS = desc.size
 
+    def assign(self, **assignments):
+        new_desc = self.original_desc.copy()
+        for letter, new_states in assignments.items():
+            new_rows, new_cols = zip(*[self.decode(i) for i in new_states])
+            new_desc[new_rows, new_cols] = letter
+        self.desc = new_desc
+
     def reset(self):
-        for random in self.random:
-            # randomize states in self.random
-            states_to_move = self.desc == random
-            rows, columns = np.meshgrid(
-                *(range(x) for x in self.desc.shape), indexing='ij')
-            old_rows, old_cols = rows[states_to_move], columns[states_to_move]
+        def assignments():
+            for random, n in self.random.items():
+                # exclude blocked stated
+                blocked = np.isin(self.desc.flatten(), self.off_limits)
+                potential_new, = np.where(np.logical_not(blocked))
+                # randomly choose non-blocked states
+                choice = np.random.choice(potential_new, size=n, replace=False)
+                yield random, choice
 
-            # exclude blocked stated
-            blocked = np.isin(self.desc.flatten(), self.blocked)
-            potential_new, = np.where(np.logical_not(blocked))
-
-            # randomly choose non-blocked states
-            choice = np.random.choice(
-                potential_new,
-                size=np.count_nonzero(states_to_move),
-                replace=False)
-            new_rows, new_cols = zip(*[self.decode(i) for i in choice])
-
-            # swap old states and new states
-            swap = self.desc[new_rows, new_cols]
-            self.desc[new_rows, new_cols] = self.desc[old_rows, old_cols]
-            self.desc[old_rows, old_cols] = swap
-
+        self.assign(**dict(assignments()))
         self.set_desc(self.desc)
         self.last_transition = None
         return super().reset()
@@ -223,7 +218,7 @@ if __name__ == '__main__':
     env.reset()
     while True:
         env.render()
-        time.sleep(1)
+        time.sleep(.5)
         s, r, t, i = env.step(env.action_space.sample())
         print('reward', r)
         if t:

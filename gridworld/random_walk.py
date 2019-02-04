@@ -21,6 +21,7 @@ def run(env):
         if t:
             print('resetting')
             env.reset()
+            env.render()
             print()
         time.sleep(1)
 
