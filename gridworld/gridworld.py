@@ -67,6 +67,10 @@ class GridWorld(DiscreteEnv):
 
         self.desc = text_map = np.array(
             [list(r) for r in text_map])  # type: np.ndarray
+
+        off_limits = np.array(list(blocked + start))
+        blocked = np.isin(self.desc.flatten(), off_limits)
+        self.potential_new, = np.where(np.logical_not(blocked))
         self.original_desc = self.desc.copy()
         super().__init__(
             nS=text_map.size,
@@ -128,16 +132,10 @@ class GridWorld(DiscreteEnv):
         self.desc = new_desc
 
     def reset(self):
-        def assignments():
-            for random, n in self.random.items():
-                # exclude blocked stated
-                blocked = np.isin(self.desc.flatten(), self.off_limits)
-                potential_new, = np.where(np.logical_not(blocked))
-                # randomly choose non-blocked states
-                choice = np.random.choice(potential_new, size=n, replace=False)
-                yield random, choice
-
-        self.assign(**dict(assignments()))
+        n_choices = sum(self.random.values())
+        choices = np.random.choice(self.potential_new, size=n_choices, replace=False)
+        choices = np.split(choices, self.random.values())
+        self.assign(**dict(zip(self.random.keys(), choices)))
         self.set_desc(self.desc)
         self.last_transition = None
         return super().reset()
