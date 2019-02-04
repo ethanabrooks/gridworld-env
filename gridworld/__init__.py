@@ -4,20 +4,28 @@ import json
 from gym.envs import register
 from gridworld.gridworld import GridWorld
 
+SUFFIX = 'GridWorld-v0'
+JSON_PATH = Path(__file__).parent.joinpath('json')
 
-def register_from_string(id, string):
-    obj = json.loads(string)
+
+def register_from_string(env_id, **kwargs):
     register(
-        id=id,
+        id=env_id,
         entry_point=f'{GridWorld.__module__}:{GridWorld.__name__}',
-        trials=obj.pop('trials', 1),
-        reward_threshold=obj.pop('reward_threshold', None),
-        max_episode_steps=obj.pop('max_episode_steps', None),
-        max_episode_seconds=obj.pop('max_episode_seconds', None),
+        trials=kwargs.pop('trials', 1),
+        reward_threshold=kwargs.pop('reward_threshold', None),
+        max_episode_steps=kwargs.pop('max_episode_steps', None),
+        max_episode_seconds=kwargs.pop('max_episode_seconds', None),
         local_only=False,
         nondeterministic=False,
-        kwargs=obj,
+        kwargs=kwargs,
     )
+
+
+def get_args(env_id):
+    path = Path(JSON_PATH, env_id.rstrip(SUFFIX)).with_suffix('.json')
+    with path.open('rb') as f:
+        return json.load(f)
 
 
 def get_id(path: Path):
@@ -25,10 +33,6 @@ def get_id(path: Path):
            + 'GridWorld-v0'
 
 
-def get_paths():
-    yield from Path(__file__).parent.joinpath('json').iterdir()
-
-
-for path in get_paths():
+for path in JSON_PATH.iterdir():
     with path.open() as f:
-        register_from_string(get_id(path), f.read())
+        register_from_string(get_id(path), **json.load(f))
