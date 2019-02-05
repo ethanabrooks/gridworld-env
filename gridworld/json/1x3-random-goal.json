@@ -1,7 +1,8 @@
 {
-    "text_map": ["s *"],
-    "transitions": [[0, 1], [0, -1]],
+    "text_map": ["s*s"],
+    "transitions": [[0, -1], [0, 1]],
     "start": "s",
+    "random": "s*",
     "terminal": "*",
     "reward": {
         "*": 1
