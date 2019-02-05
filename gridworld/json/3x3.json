@@ -1,0 +1,11 @@
+{
+  "text_map": [
+    "   ",
+    " s ",
+    "   "
+  ],
+  "random": {"*":  1},
+  "start": "s",
+  "terminal": "*",
+  "reward": {"*": 1}
+}
