@@ -1,6 +1,6 @@
-from gridworld import get_id, JSON_PATH
+from gridworld import SUFFIX, JSON_PATH
 
 
 def cli():
     for path in JSON_PATH.iterdir():
-        print(get_id(path))
+        print(f'{path.stem}{SUFFIX}')
