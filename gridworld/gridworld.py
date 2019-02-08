@@ -1,14 +1,16 @@
 #! /usr/bin/env python
+# stdlib
+from collections import namedtuple
 import json
+from pathlib import Path
 import sys
 import time
-from collections import namedtuple
-from pathlib import Path
-from typing import Container, Dict, Iterable, Tuple, List
+from typing import Container, Dict, Iterable, List, Tuple
 
-import numpy as np
+# third party
 from gym import utils
 from gym.envs.toy_text.discrete import DiscreteEnv
+import numpy as np
 from six import StringIO
 
 Transition = namedtuple('Transition', 'probability new_state reward terminal')
@@ -16,9 +18,9 @@ Transition = namedtuple('Transition', 'probability new_state reward terminal')
 
 class GridWorld(DiscreteEnv):
     transition_strings = {
-        (0, 0):  '🛑',
-        (0, 1):  '👉',
-        (1, 0):  '👇',
+        (0, 0): '🛑',
+        (0, 1): '👉',
+        (1, 0): '👇',
         (0, -1): '👈',
         (-1, 0): '👆'
     }
@@ -70,7 +72,15 @@ class GridWorld(DiscreteEnv):
 
         off_limits = np.array(list(blocked + start))
         blocked = np.isin(self.desc.flatten(), off_limits)
-        self.potential_new, = np.where(np.logical_not(blocked))
+        states = np.arange(self.desc.size)
+        self.potential_new = np.ravel_multi_index(
+            np.where(
+                np.logical_not(
+                    np.logical_or(
+                        np.isin(self.desc, self.blocked),
+                        np.isin(self.desc, self.start)))))
+        import ipdb
+        ipdb.set_trace()
         self.original_desc = self.desc.copy()
         super().__init__(
             nS=text_map.size,
@@ -133,7 +143,8 @@ class GridWorld(DiscreteEnv):
 
     def reset(self):
         n_choices = sum(self.random.values())
-        choices = np.random.choice(self.potential_new, size=n_choices, replace=False)
+        choices = np.random.choice(
+            self.potential_new, size=n_choices, replace=False)
         choices = np.split(choices, self.random.values())
         self.assign(**dict(zip(self.random.keys(), choices)))
         self.set_desc(self.desc)
@@ -168,16 +179,21 @@ class GridWorld(DiscreteEnv):
             return outfile
         out[i][j] = self.desc[i, j]
 
-    def encode(self, i: int, j: int) -> int:
-        nrow, ncol = self.desc.shape
-        assert 0 <= i < nrow
-        assert 0 <= j < ncol
-        return int(i * ncol + j)
+    def encode(self, states: np.ndarray) -> int:
+        return np.ravel_multi_index(states, self.desc.shape)
+        # nrow, ncol = self.desc.shape
+        # assert 0 <= i < nrow
+        # assert 0 <= j < ncol
+        # return int(i * ncol + j)
 
-    def decode(self, s: int) -> Tuple[int, int]:
+    def decode(self, s: np.ndarray) -> Tuple[int, int]:
         nrow, ncol = self.desc.shape
         assert 0 <= s < nrow * ncol
-        return int(s // ncol), int(s % ncol)
+        x = np.unravel_index(s, self.desc.shape)
+        y = int(s // ncol), int(s % ncol)
+        import ipdb
+        ipdb.set_trace()
+        return x
 
     def generate_matrices(self):
         self._transition_matrix = np.zeros((self.nS, self.nA, self.nS))
@@ -186,13 +202,13 @@ class GridWorld(DiscreteEnv):
             for a, transitions in action_P.items():
                 trans: Transition
                 for trans in transitions:
-                    self._transition_matrix[
-                        s1, a, trans.new_state] = trans.probability
+                    self._transition_matrix[s1, a, trans.
+                                            new_state] = trans.probability
                     self._reward_matrix[s1, a] = trans.reward
                     if trans.terminal:
                         for a in range(self.nA):
-                            self._transition_matrix[trans.new_state, a,
-                                                    trans.new_state] = 1
+                            self._transition_matrix[trans.new_state, a, trans.
+                                                    new_state] = 1
                             self._reward_matrix[trans.new_state, a] = 0
                             assert not np.any(self._transition_matrix > 1)
 
