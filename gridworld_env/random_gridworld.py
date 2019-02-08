@@ -32,7 +32,8 @@ class RandomGridWorld(GridWorld):
         )
 
     def append_randoms(self, state):
-        return (state,) + tuple(self.random_states)
+        return tuple([int(np.squeeze(s)) for s in
+                      [state] + self.random_states])
 
     def set_randoms(self):
         n_choices = sum(self.random.values())
@@ -46,9 +47,9 @@ class RandomGridWorld(GridWorld):
 
     def reset(self):
         if self.potential_new is None:
-            self.random_states = (None,) * len(self.random)
-        else:
-            self.set_randoms()
+            super().reset()
+            return
+        self.set_randoms()
         self.last_transition = None
         return self.append_randoms(super().reset())
 

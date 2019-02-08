@@ -30,14 +30,13 @@ def run(env):
     env.reset()
     while True:
         env.render()
-        time.sleep(.5)
         s, r, t, i = env.step(actions[input('act:')])
+        print(s)
         print('reward', r)
-        # time.sleep(.5)
         if t:
             env.render()
             print('resetting')
-            time.sleep(1)
+            time.sleep(.5)
             env.reset()
             print()
 
