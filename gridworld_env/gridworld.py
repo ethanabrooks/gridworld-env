@@ -7,8 +7,9 @@ from typing import Container, Dict, Iterable, List
 # third party
 import numpy as np
 from gym import utils
-from gym.envs.toy_text.discrete import DiscreteEnv
 from six import StringIO
+
+from gridworld_env.discrete import DiscreteEnv
 
 Transition = namedtuple('Transition', 'probability new_state reward terminal')
 
