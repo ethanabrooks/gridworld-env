@@ -76,6 +76,13 @@ class GridWorld(DiscreteEnv):
             isd=self.get_isd(desc=text_map),
         )
 
+    def assign(self, **assignments):
+        new_desc = self.original_desc.copy()
+        for letter, new_states in assignments.items():
+            new_rows, new_cols = zip(*[self.decode(i) for i in new_states])
+            new_desc[new_rows, new_cols] = letter
+        self.desc = new_desc
+
     def get_isd(self, desc):
         isd = np.isin(desc, tuple(self.start))
         if isd.sum():

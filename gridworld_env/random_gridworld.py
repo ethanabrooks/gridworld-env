@@ -53,13 +53,6 @@ class RandomGridWorld(GridWorld):
         self.last_transition = None
         return self.append_randoms(super().reset())
 
-    def assign(self, **assignments):
-        new_desc = self.original_desc.copy()
-        for letter, new_states in assignments.items():
-            new_rows, new_cols = zip(*[self.decode(i) for i in new_states])
-            new_desc[new_rows, new_cols] = letter
-        self.desc = new_desc
-
     def set_desc(self, desc):
         self.P = self.get_transitions(desc)
         self.isd = self.get_isd(desc)
