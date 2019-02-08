@@ -1,6 +1,6 @@
 import argparse
 import time
-import gridworld
+import gridworld_env
 
 import gym
 
@@ -13,17 +13,18 @@ def cli():
 
 def run(env):
     env.reset()
-    env.render()
     while True:
-        s, r, t, i = env.step(env.action_space.sample())
         env.render()
+        time.sleep(.5)
+        s, r, t, i = env.step(env.action_space.sample())
         print('reward', r)
+        # time.sleep(.5)
         if t:
-            print('resetting')
-            env.reset()
             env.render()
+            print('resetting')
+            time.sleep(1)
+            env.reset()
             print()
-        time.sleep(1)
 
 
 if __name__ == '__main__':
