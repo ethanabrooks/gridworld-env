@@ -127,6 +127,10 @@ class GridWorld(DiscreteEnv):
         self.last_transition = np.array(self.decode(s)) - np.array(prev)
         return s, r, t, i
 
+    def reset(self):
+        self.last_transition = None
+        return super().reset()
+
     def render(self, mode='human'):
         if self.last_transition is not None:
             transition_string = GridWorld.transition_strings[tuple(
