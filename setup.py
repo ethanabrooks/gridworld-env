@@ -25,4 +25,4 @@ setup(
         'random-walk=gridworld.random_walk:cli',
         'list-ids=gridworld.list:cli',
     ]),
-    install_requires=['gym==0.10.4', 'numpy'])
+    install_requires=['gym', 'numpy'])
