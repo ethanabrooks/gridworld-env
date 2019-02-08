@@ -1,10 +1,10 @@
 import json
 from pathlib import Path
 
-from gridworld_env.random_gridworld import RandomGridWorld
 from gym.envs import register
 
 from gridworld_env.gridworld import GridWorld
+from gridworld_env.random_gridworld import RandomGridWorld
 
 SUFFIX = 'GridWorld-v0'
 JSON_PATH = Path(__file__).parent.joinpath('json')
@@ -30,7 +30,7 @@ def register_from_string(env_id, **kwargs):
 
 
 def get_args(env_id):
-    path = Path(JSON_PATH, env_id.rstrip(SUFFIX)).with_suffix('.json')
+    path = Path(JSON_PATH, env_id[:-len(SUFFIX)]).with_suffix('.json')
     with path.open('rb') as f:
         return json.load(f)
 
@@ -39,5 +39,6 @@ def register_envs():
     for path in JSON_PATH.iterdir():
         with path.open() as f:
             register_from_string(f'{path.stem}{SUFFIX}', **json.load(f))
+
 
 register_envs()
