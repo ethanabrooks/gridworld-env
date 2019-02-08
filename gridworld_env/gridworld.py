@@ -1,14 +1,11 @@
 #! /usr/bin/env python
 # stdlib
 import sys
-import time
 from collections import namedtuple
 from typing import Container, Dict, Iterable, List
 
 # third party
-import gym
 import numpy as np
-from gridworld_env.random_walk import run
 from gym import utils
 from gym.envs.toy_text.discrete import DiscreteEnv
 from six import StringIO
@@ -188,4 +185,6 @@ class GridWorld(DiscreteEnv):
 
 
 if __name__ == '__main__':
+    import gym
+    from gridworld_env.random_walk import run
     run(gym.make('BookGridGridWorld-v0'))

@@ -1,14 +1,10 @@
 #! /usr/bin/env python
-import json
-import time
-from pathlib import Path
 from typing import Dict
 
-import gym
 import numpy as np
-from gridworld_env.gridworld import GridWorld
-from gridworld_env.random_walk import run
 from gym import spaces
+
+from gridworld_env.gridworld import GridWorld
 
 
 class RandomGridWorld(GridWorld):
@@ -46,9 +42,6 @@ class RandomGridWorld(GridWorld):
         self.set_desc(self.desc)
 
     def reset(self):
-        if self.potential_new is None:
-            super().reset()
-            return
         self.set_randoms()
         self.last_transition = None
         return self.append_randoms(super().reset())
@@ -65,6 +58,8 @@ class RandomGridWorld(GridWorld):
 
 
 if __name__ == '__main__':
+    from gridworld_env.random_walk import run
+    import gym
     run(gym.make('1x3RandomGridWorld-v0'))
     # env.reset()
     # while True:
