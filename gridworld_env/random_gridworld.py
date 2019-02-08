@@ -1,18 +1,14 @@
 #! /usr/bin/env python
 from typing import Dict
 
-import numpy as np
 from gym import spaces
+import numpy as np
 
 from gridworld_env.gridworld import GridWorld
 
 
 class RandomGridWorld(GridWorld):
-    def __init__(
-            self,
-            random: Dict[str, int] = None,
-            *args, **kwargs
-    ):
+    def __init__(self, random: Dict[str, int] = None, *args, **kwargs):
         self.random = random
         self.potential_new = None
         super().__init__(*args, **kwargs)
@@ -23,20 +19,20 @@ class RandomGridWorld(GridWorld):
                         np.isin(self.desc, self.blocked),
                         np.isin(self.desc, self.start)))),
             dims=self.desc.shape)
+        assert self.potential_new.size
         self.observation_space = spaces.Tuple(
-            [self.observation_space] * (1 + len(random))
-        )
+            [self.observation_space] * (1 + len(random)))
 
     def append_randoms(self, state):
-        return tuple([int(np.squeeze(s)) for s in
-                      [state] + self.random_states])
+        return tuple(
+            [int(np.squeeze(s)) for s in [state] + self.random_states])
 
     def set_randoms(self):
         n_choices = sum(self.random.values())
         choices = np.random.choice(
             self.potential_new, size=n_choices, replace=False)
-        *self.random_states, _ = np.split(choices,
-                                          np.cumsum(list(self.random.values())))
+        *self.random_states, _ = np.split(
+            choices, np.cumsum(list(self.random.values())))
 
         self.assign(**dict(zip(self.random.keys(), self.random_states)))
         self.set_desc(self.desc)

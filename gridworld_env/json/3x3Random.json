@@ -4,8 +4,8 @@
     "   ",
     "   "
   ],
-  "random": {"*":  1},
-  "start": " ",
+  "random": {"*":  1, "s": 1},
+  "start": "s",
   "terminal": "*",
   "reward": {"*": 1}
 }
