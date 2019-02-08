@@ -1,12 +1,14 @@
 #! /usr/bin/env python
-import json
+# stdlib
 import sys
 import time
 from collections import namedtuple
-from pathlib import Path
-from typing import Container, Dict, Iterable, Tuple, List
+from typing import Container, Dict, Iterable, List
 
+# third party
+import gym
 import numpy as np
+from gridworld_env.random_walk import run
 from gym import utils
 from gym.envs.toy_text.discrete import DiscreteEnv
 from six import StringIO
@@ -16,9 +18,9 @@ Transition = namedtuple('Transition', 'probability new_state reward terminal')
 
 class GridWorld(DiscreteEnv):
     transition_strings = {
-        (0, 0):  '🛑',
-        (0, 1):  '👉',
-        (1, 0):  '👇',
+        (0, 0): '🛑',
+        (0, 1): '👉',
+        (1, 0): '👇',
         (0, -1): '👈',
         (-1, 0): '👆'
     }
@@ -32,7 +34,6 @@ class GridWorld(DiscreteEnv):
             probabilities: List[np.ndarray] = None,
             start: Iterable[str] = '',
             blocked: Container[str] = '',
-            random: Dict[str, int] = None,
     ):
 
         if transitions is None:
@@ -57,10 +58,9 @@ class GridWorld(DiscreteEnv):
         self.terminal = np.array(list(terminal))
         self.blocked = np.array(list(blocked))
         self.start = np.array(list(start))
-        self.off_limits = np.array(list(blocked + start))
-        self.random = random or dict()
         self.reward = reward
 
+        self.random_states = None
         self.last_transition = None
         self._transition_matrix = None
         self._reward_matrix = None
@@ -68,9 +68,6 @@ class GridWorld(DiscreteEnv):
         self.desc = text_map = np.array(
             [list(r) for r in text_map])  # type: np.ndarray
 
-        off_limits = np.array(list(blocked + start))
-        blocked = np.isin(self.desc.flatten(), off_limits)
-        self.potential_new, = np.where(np.logical_not(blocked))
         self.original_desc = self.desc.copy()
         super().__init__(
             nS=text_map.size,
@@ -81,7 +78,9 @@ class GridWorld(DiscreteEnv):
 
     def get_isd(self, desc):
         isd = np.isin(desc, tuple(self.start))
-        return np.reshape(isd / isd.sum(), -1)
+        if isd.sum():
+            return np.reshape(isd / isd.sum(), -1)
+        return np.arange(self.desc.size)
 
     def get_transitions(self, desc):
         nrows, ncols = desc.shape
@@ -97,48 +96,25 @@ class GridWorld(DiscreteEnv):
                 yield action, list(get_transition_tuples_from(state, action))
 
         def get_transition_tuples_from(state, action):
-            i, j = self.decode(state)
-            char = str(desc[i, j])
+            coord = self.decode(state)
             for transition, probability in zip(self.transitions[action],
                                                self.probabilities[action]):
-                new_i, new_j = np.clip(
-                    np.array([i, j], dtype=int) + transition,
+                new_coord = np.clip(
+                    np.array(coord) + transition,
                     a_min=np.zeros(2, dtype=int),
                     a_max=np.array(desc.shape, dtype=int) - 1,
                 )
-                new_char = self.desc[new_i, new_j]
+                new_char = self.desc[tuple(new_coord)]
 
-                if np.all(np.isin(desc[new_i, new_j], self.blocked)):
-                    new_i, new_j = i, j
+                if np.all(np.isin(new_char, self.blocked)):
+                    new_coord = coord
                 yield Transition(
                     probability=probability,
-                    new_state=self.encode(new_i, new_j),
+                    new_state=self.encode(*new_coord),
                     reward=self.reward.get(new_char, 0),
                     terminal=new_char in self.terminal)
 
         return dict(get_state_transitions())
-
-    def set_desc(self, desc):
-        self.P = self.get_transitions(desc)
-        self.isd = self.get_isd(desc)
-        self.last_transition = None  # for rendering
-        self.nS = desc.size
-
-    def assign(self, **assignments):
-        new_desc = self.original_desc.copy()
-        for letter, new_states in assignments.items():
-            new_rows, new_cols = zip(*[self.decode(i) for i in new_states])
-            new_desc[new_rows, new_cols] = letter
-        self.desc = new_desc
-
-    def reset(self):
-        n_choices = sum(self.random.values())
-        choices = np.random.choice(self.potential_new, size=n_choices, replace=False)
-        choices = np.split(choices, self.random.values())
-        self.assign(**dict(zip(self.random.keys(), choices)))
-        self.set_desc(self.desc)
-        self.last_transition = None
-        return super().reset()
 
     def step(self, a):
         prev = self.decode(self.s)
@@ -168,16 +144,11 @@ class GridWorld(DiscreteEnv):
             return outfile
         out[i][j] = self.desc[i, j]
 
-    def encode(self, i: int, j: int) -> int:
-        nrow, ncol = self.desc.shape
-        assert 0 <= i < nrow
-        assert 0 <= j < ncol
-        return int(i * ncol + j)
+    def encode(self, i, j):
+        return np.ravel_multi_index((i, j), self.desc.shape)
 
-    def decode(self, s: int) -> Tuple[int, int]:
-        nrow, ncol = self.desc.shape
-        assert 0 <= s < nrow * ncol
-        return int(s // ncol), int(s % ncol)
+    def decode(self, s):
+        return np.unravel_index(s, self.desc.shape)
 
     def generate_matrices(self):
         self._transition_matrix = np.zeros((self.nS, self.nA, self.nS))
@@ -186,13 +157,13 @@ class GridWorld(DiscreteEnv):
             for a, transitions in action_P.items():
                 trans: Transition
                 for trans in transitions:
-                    self._transition_matrix[
-                        s1, a, trans.new_state] = trans.probability
+                    self._transition_matrix[s1, a, trans.
+                                            new_state] = trans.probability
                     self._reward_matrix[s1, a] = trans.reward
                     if trans.terminal:
                         for a in range(self.nA):
-                            self._transition_matrix[trans.new_state, a,
-                                                    trans.new_state] = 1
+                            self._transition_matrix[trans.new_state, a, trans.
+                                                    new_state] = 1
                             self._reward_matrix[trans.new_state, a] = 0
                             assert not np.any(self._transition_matrix > 1)
 
@@ -210,15 +181,4 @@ class GridWorld(DiscreteEnv):
 
 
 if __name__ == '__main__':
-    with Path('4x4.json').open() as f:
-        env = GridWorld(**json.load(f))
-
-    env.reset()
-    while True:
-        env.render()
-        time.sleep(.5)
-        s, r, t, i = env.step(env.action_space.sample())
-        print('reward', r)
-        if t:
-            print('reset')
-            env.reset()
+    run(gym.make('BookGridGridWorld-v0'))

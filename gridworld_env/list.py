@@ -1,4 +1,4 @@
-from gridworld import SUFFIX, JSON_PATH
+from gridworld_env import SUFFIX, JSON_PATH
 
 
 def cli():

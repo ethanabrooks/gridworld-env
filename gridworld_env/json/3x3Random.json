@@ -1,0 +1,12 @@
+{
+  "text_map": [
+    "   ",
+    "   ",
+    "  #"
+  ],
+  "random": {"*":  1, "s":  1},
+  "start": "s",
+  "blocked": "#",
+  "terminal": "*",
+  "reward": {"*": 1}
+}
