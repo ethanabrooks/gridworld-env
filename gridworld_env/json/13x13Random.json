@@ -19,5 +19,5 @@
   "start": "s",
   "terminal": "*",
   "reward": {"*": 1},
-  "max_episode_steps": 8
+  "max_episode_steps": 12
 }
