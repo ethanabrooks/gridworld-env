@@ -1,12 +1,12 @@
 #! /usr/bin/env python
 # stdlib
-import sys
 from collections import namedtuple
+import sys
 from typing import Container, Dict, Iterable, List
 
 # third party
-import numpy as np
 from gym import utils
+import numpy as np
 from six import StringIO
 
 from gridworld_env.discrete import DiscreteEnv
@@ -80,6 +80,13 @@ class GridWorld(DiscreteEnv):
             new_rows, new_cols = zip(*[self.decode(i) for i in new_states])
             new_desc[new_rows, new_cols] = letter
         self.desc = new_desc
+        self.set_desc(self.desc)
+
+    def set_desc(self, desc):
+        self.P = self.get_transitions(desc)
+        self.isd = self.get_isd(desc)
+        self.last_transition = None  # for rendering
+        self.nS = desc.size
 
     def get_isd(self, desc):
         isd = np.isin(desc, tuple(self.start))

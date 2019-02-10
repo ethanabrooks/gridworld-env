@@ -31,19 +31,12 @@ class RandomGridWorld(GridWorld):
             choices, np.cumsum(list(self.random.values())))
 
         self.assign(**dict(zip(self.random.keys(), self.random_states)))
-        self.set_desc(self.desc)
 
     def reset(self):
         o = super().reset()
         self.set_randoms()
         self.last_transition = None
         return self.append_randoms(o)
-
-    def set_desc(self, desc):
-        self.P = self.get_transitions(desc)
-        self.isd = self.get_isd(desc)
-        self.last_transition = None  # for rendering
-        self.nS = desc.size
 
     def step(self, a):
         s, r, t, i = super().step(a)
