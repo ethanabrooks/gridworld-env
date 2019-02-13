@@ -74,6 +74,10 @@ class GridWorld(DiscreteEnv):
             isd=self.get_isd(desc=text_map),
         )
 
+    def seed(self, seed=None):
+        np.seed(seed)
+        super().seed(seed)
+
     def assign(self, **assignments):
         new_desc = self.original_desc.copy()
         for letter, new_states in assignments.items():
