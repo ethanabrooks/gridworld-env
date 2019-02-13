@@ -58,7 +58,6 @@ class GridWorld(DiscreteEnv):
         self.start = np.array(list(start))
         self.reward = reward
 
-        self.random_states = None
         self.last_transition = None
         self._transition_matrix = None
         self._reward_matrix = None
@@ -73,10 +72,6 @@ class GridWorld(DiscreteEnv):
             P=self.get_transitions(desc=text_map),
             isd=self.get_isd(desc=text_map),
         )
-
-    def seed(self, seed=None):
-        np.seed(seed)
-        super().seed(seed)
 
     def assign(self, **assignments):
         new_desc = self.original_desc.copy()

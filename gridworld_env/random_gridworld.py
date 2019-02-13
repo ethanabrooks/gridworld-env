@@ -6,10 +6,10 @@ import numpy as np
 
 from gridworld_env.gridworld import GridWorld
 
-
 class RandomGridWorld(GridWorld):
     def __init__(self, random: Dict[str, int] = None, *args, **kwargs):
         self.random = random
+        self.random_states = None
         self.possible_choices = None
         super().__init__(*args, **kwargs)
         self.possible_choices = np.ravel_multi_index(
@@ -25,7 +25,7 @@ class RandomGridWorld(GridWorld):
     def set_randoms(self):
         n_choices = sum(self.random.values())
         possible_choices, = np.where(self.possible_choices != self.s)
-        choices = np.random.choice(
+        choices = self.np_random.choice(
             possible_choices, size=n_choices, replace=False)
         *self.random_states, _ = np.split(
             choices, np.cumsum(list(self.random.values())))
