@@ -6,6 +6,8 @@
     "random": {
         "*": 1
     },
+    "blocked":
+    "#",
     "start":
     "s",
     "terminal":
