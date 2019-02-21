@@ -6,6 +6,7 @@ import numpy as np
 
 from gridworld_env.gridworld import GridWorld
 
+
 class RandomGridWorld(GridWorld):
     def __init__(self, random: Dict[str, int] = None, *args, **kwargs):
         self.random = random
@@ -46,6 +47,7 @@ class RandomGridWorld(GridWorld):
 if __name__ == '__main__':
     from gridworld_env.random_walk import run
     import gym
+
     run(gym.make('1x3RandomGridWorld-v0'))
     # env.reset()
     # while True:
