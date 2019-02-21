@@ -23,6 +23,7 @@ setup(
     packages=find_packages(),
     entry_points=dict(console_scripts=[
         'random-walk=gridworld_env.random_walk:cli',
+        'control=gridworld_env.keyboard_control:cli',
         'list-ids=gridworld_env.list:cli',
     ]),
     install_requires=['gym', 'numpy'])
