@@ -16,5 +16,5 @@
         "*": 1
     },
     "max_episode_steps":
-    50
+    4
 }
