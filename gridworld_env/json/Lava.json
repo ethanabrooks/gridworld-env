@@ -1,0 +1,13 @@
+{
+  "text_map": [
+    "     %",
+    "   %  ",
+    "   %%$"
+  ],
+    "start": "*",
+    "terminal": "%$",
+    "reward": {
+        "g": 1
+    },
+  "max_episode_steps": 7
+}
