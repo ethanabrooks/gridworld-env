@@ -12,5 +12,5 @@
       "$": 1,
       " ": -1
     },
-    "max_episode_steps": 21
+    "max_episode_steps": 22
 }
