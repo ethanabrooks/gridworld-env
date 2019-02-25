@@ -9,7 +9,8 @@
     "start": "*",
     "terminal": "%$",
     "reward": {
-        "$": 1
+        "$": 1,
+        " ": -1
     },
     "max_episode_steps": 13
 }
