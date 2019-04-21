@@ -1,12 +1,12 @@
 #! /usr/bin/env python
 # stdlib
-from collections import namedtuple
 import sys
+from collections import namedtuple
 from typing import Container, Dict, Iterable, List
 
+import numpy as np
 # third party
 from gym import utils
-import numpy as np
 from six import StringIO
 
 from gridworld_env.discrete import DiscreteEnv
@@ -58,6 +58,7 @@ class GridWorld(DiscreteEnv):
         self.start = np.array(list(start))
         self.reward = reward
 
+        self.last_reward = None
         self.last_transition = None
         self._transition_matrix = None
         self._reward_matrix = None
@@ -130,6 +131,7 @@ class GridWorld(DiscreteEnv):
     def step(self, a):
         prev = self.decode(self.s)
         s, r, t, i = super().step(a)
+        self.last_reward = r
         self.last_transition = np.array(self.decode(s)) - np.array(prev)
         return s, r, t, i
 
@@ -143,6 +145,8 @@ class GridWorld(DiscreteEnv):
                 self.last_transition)]
 
             print(transition_string)
+        if self.last_reward is not None:
+            print('Reward:', self.last_reward)
 
         outfile = StringIO() if mode == 'ansi' else sys.stdout
         out = self.desc.copy().tolist()
