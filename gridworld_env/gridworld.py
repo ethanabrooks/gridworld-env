@@ -3,6 +3,7 @@
 import sys
 from collections import namedtuple
 from typing import Container, Dict, Iterable, List
+from rl_utils import cartesian_product
 
 import numpy as np
 # third party
@@ -16,9 +17,9 @@ Transition = namedtuple('Transition', 'probability new_state reward terminal')
 
 class GridWorld(DiscreteEnv):
     transition_strings = {
-        (0, 0): '🛑',
-        (0, 1): '👉',
-        (1, 0): '👇',
+        (0, 0):  '🛑',
+        (0, 1):  '👉',
+        (1, 0):  '👇',
         (0, -1): '👈',
         (-1, 0): '👆'
     }
@@ -77,8 +78,10 @@ class GridWorld(DiscreteEnv):
     def assign(self, **assignments):
         new_desc = self.original_desc.copy()
         for letter, new_states in assignments.items():
-            new_rows, new_cols = zip(*[self.decode(i) for i in new_states])
-            new_desc[new_rows, new_cols] = letter
+            idxs = zip(*[self.decode(i) for i in new_states])
+            import ipdb;
+            ipdb.set_trace()
+            new_desc[tuple(idxs)] = letter
         self.desc = new_desc
         self.set_desc(self.desc)
 
@@ -92,16 +95,15 @@ class GridWorld(DiscreteEnv):
         isd = np.isin(desc, tuple(self.start))
         if isd.sum():
             return np.reshape(isd / isd.sum(), -1)
-        return np.arange(self.desc.size)
+        return np.arange(self.nS)
 
     def get_transitions(self, desc):
-        nrows, ncols = desc.shape
+        shape = desc.shape
 
         def get_state_transitions():
-            for i in range(nrows):
-                for j in range(ncols):
-                    state = self.encode(i, j)
-                    yield state, dict(get_action_transitions_from(state))
+            for idxs in cartesian_product(*map(np.arange, shape)):
+                state = self.encode(*idxs)
+                yield state, dict(get_action_transitions_from(state))
 
         def get_action_transitions_from(state: int):
             for action in self.actions:
@@ -111,10 +113,11 @@ class GridWorld(DiscreteEnv):
             coord = self.decode(state)
             for transition, probability in zip(self.transitions[action],
                                                self.probabilities[action]):
+
                 new_coord = np.clip(
                     np.array(coord) + transition,
-                    a_min=np.zeros(2, dtype=int),
-                    a_max=np.array(desc.shape, dtype=int) - 1,
+                    a_min=np.zeros_like(coord, dtype=int),
+                    a_max=np.array(self.desc.shape, dtype=int) - 1,
                 )
                 new_char = self.desc[tuple(new_coord)]
 
@@ -164,7 +167,6 @@ class GridWorld(DiscreteEnv):
         out[i][j] = self.desc[i, j]
 
     def encode(self, *idxs):
-        assert len(idxs) == 2
         return np.ravel_multi_index(idxs, self.desc.shape)
 
     def decode(self, s):
@@ -178,12 +180,12 @@ class GridWorld(DiscreteEnv):
                 trans: Transition
                 for trans in transitions:
                     self._transition_matrix[s1, a, trans.
-                                            new_state] = trans.probability
+                        new_state] = trans.probability
                     self._reward_matrix[s1, a] = trans.reward
                     if trans.terminal:
                         for a in range(self.nA):
                             self._transition_matrix[trans.new_state, a, trans.
-                                                    new_state] = 1
+                                new_state] = 1
                             self._reward_matrix[trans.new_state, a] = 0
                             assert not np.any(self._transition_matrix > 1)
 
@@ -203,4 +205,5 @@ class GridWorld(DiscreteEnv):
 if __name__ == '__main__':
     import gym
     from gridworld_env.random_walk import run
+
     run(gym.make('BookGridGridWorld-v0'))
