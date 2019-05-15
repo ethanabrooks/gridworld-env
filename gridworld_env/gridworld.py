@@ -163,8 +163,9 @@ class GridWorld(DiscreteEnv):
             return outfile
         out[i][j] = self.desc[i, j]
 
-    def encode(self, i, j):
-        return np.ravel_multi_index((i, j), self.desc.shape)
+    def encode(self, *idxs):
+        assert len(idxs) == 2
+        return np.ravel_multi_index(idxs, self.desc.shape)
 
     def decode(self, s):
         return np.unravel_index(s, self.desc.shape)

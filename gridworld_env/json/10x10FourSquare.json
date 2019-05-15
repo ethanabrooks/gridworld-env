@@ -1,0 +1,32 @@
+{
+    "text_map": [
+      [
+        "rrrrrggggg",
+        "rrrrrggggg",
+        "rrrrrggggg",
+        "rrrrrggggg",
+        "rrrrrggggg",
+        "bbbbbyyyyy",
+        "bbbbbyyyyy",
+        "bbbbbyyyyy",
+        "bbbbbyyyyy",
+        "bbbbbyyyyy"],
+      [
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          ",
+        "          "
+      ]
+    ],
+    "start":
+    " ",
+    "random": {"+": 4, "x":  4},
+    "max_episode_steps":
+    24
+}
