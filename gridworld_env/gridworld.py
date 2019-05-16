@@ -16,14 +16,6 @@ Transition = namedtuple('Transition', 'probability new_state reward terminal')
 
 
 class GridWorld(DiscreteEnv):
-    transition_strings = {
-        (0, 0):  '🛑',
-        (0, 1):  '👉',
-        (1, 0):  '👇',
-        (0, -1): '👈',
-        (-1, 0): '👆'
-    }
-
     def __init__(
             self,
             text_map: Iterable[Iterable[str]],
@@ -37,6 +29,8 @@ class GridWorld(DiscreteEnv):
 
         if transitions is None:
             transitions = [[-1, 0], [1, 0], [0, 1], [0, -1]]
+
+        self.action_strings = [self.transition_strings[t] for t in transitions]
 
         # because every action technically corresponds to a _list_ of transitions (to
         # permit for stochasticity, we add an additional level to the nested list
@@ -61,6 +55,7 @@ class GridWorld(DiscreteEnv):
 
         self.last_reward = None
         self.last_transition = None
+        self.last_action = None
         self._transition_matrix = None
         self._reward_matrix = None
 
@@ -74,6 +69,16 @@ class GridWorld(DiscreteEnv):
             P=self.get_transitions(desc=text_map),
             isd=self.get_isd(desc=text_map),
         )
+
+    @property
+    def transition_strings(self):
+        return {
+            (0, 0):  '🛑',
+            (0, 1):  '👉',
+            (1, 0):  '👇',
+            (0, -1): '👈',
+            (-1, 0): '👆'
+        }
 
     def assign(self, **assignments):
         new_desc = self.original_desc.copy()
@@ -101,7 +106,9 @@ class GridWorld(DiscreteEnv):
         shape = desc.shape
 
         def get_state_transitions():
-            for idxs in cartesian_product(*map(np.arange, shape)):
+            product = cartesian_product(*map(np.arange, shape))
+            import ipdb; ipdb.set_trace()
+            for idxs in product:
                 state = self.encode(*idxs)
                 yield state, dict(get_action_transitions_from(state))
 
@@ -134,23 +141,17 @@ class GridWorld(DiscreteEnv):
     def step(self, a):
         prev = self.decode(self.s)
         s, r, t, i = super().step(a)
+        self.last_action = a
         self.last_reward = r
         self.last_transition = np.array(self.decode(s)) - np.array(prev)
         return s, r, t, i
 
     def reset(self):
         self.last_transition = None
+        self.last_action = None
         return super().reset()
 
-    def render(self, mode='human'):
-        if self.last_transition is not None:
-            transition_string = GridWorld.transition_strings[tuple(
-                self.last_transition)]
-
-            print(transition_string)
-        if self.last_reward is not None:
-            print('Reward:', self.last_reward)
-
+    def render_map(self, mode):
         outfile = StringIO() if mode == 'ansi' else sys.stdout
         out = self.desc.copy().tolist()
         i, j = self.decode(self.s)
@@ -164,7 +165,19 @@ class GridWorld(DiscreteEnv):
         # No need to return anything for human
         if mode != 'human':
             return outfile
-        out[i][j] = self.desc[i, j]
+        out[i][j] = self.desc[i, j]  # TODO: delete?
+
+    def render(self, mode='human'):
+        if self.last_transition is not None:
+            transition_string = self.transition_strings[tuple(
+                self.last_transition)]
+            print('transition:', transition_string)
+        if self.last_action is not None:
+            print('action:', self.action_strings[self.last_action])
+        if self.last_reward is not None:
+            print('Reward:', self.last_reward)
+
+        self.render_map(mode)
 
     def encode(self, *idxs):
         return np.ravel_multi_index(idxs, self.desc.shape)

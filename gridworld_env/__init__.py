@@ -11,11 +11,15 @@ JSON_PATH = Path(__file__).parent.joinpath('json')
 
 
 def register_from_string(env_id, **kwargs):
+    if 'class' in kwargs:
+        class_ = eva
     if 'random' in kwargs:
         class_ = RandomGridWorld
     else:
         class_ = GridWorld
 
+    if 'FourSquare' in env_id:
+        import ipdb; ipdb.set_trace()
     register(
         id=env_id,
         entry_point=f'{class_.__module__}:{class_.__name__}',
