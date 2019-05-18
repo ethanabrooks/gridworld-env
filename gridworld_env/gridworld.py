@@ -30,8 +30,6 @@ class GridWorld(DiscreteEnv):
         if transitions is None:
             transitions = [[-1, 0], [1, 0], [0, 1], [0, -1]]
 
-        self.action_strings = [self.transition_strings[t] for t in transitions]
-
         # because every action technically corresponds to a _list_ of transitions (to
         # permit for stochasticity, we add an additional level to the nested list
         # if necessary
@@ -72,21 +70,14 @@ class GridWorld(DiscreteEnv):
 
     @property
     def transition_strings(self):
-        return {
-            (0, 0):  '🛑',
-            (0, 1):  '👉',
-            (1, 0):  '👇',
-            (0, -1): '👈',
-            (-1, 0): '👆'
-        }
+        return '🛑👉👇👈👆'
 
     def assign(self, **assignments):
         new_desc = self.original_desc.copy()
         for letter, new_states in assignments.items():
-            idxs = zip(*[self.decode(i) for i in new_states])
-            import ipdb;
-            ipdb.set_trace()
-            new_desc[tuple(idxs)] = letter
+            states_ = [self.decode(i) for i in new_states]
+            idxs = tuple(zip(*states_))
+            new_desc[idxs] = letter
         self.desc = new_desc
         self.set_desc(self.desc)
 
@@ -107,7 +98,6 @@ class GridWorld(DiscreteEnv):
 
         def get_state_transitions():
             product = cartesian_product(*map(np.arange, shape))
-            import ipdb; ipdb.set_trace()
             for idxs in product:
                 state = self.encode(*idxs)
                 yield state, dict(get_action_transitions_from(state))
@@ -169,11 +159,12 @@ class GridWorld(DiscreteEnv):
 
     def render(self, mode='human'):
         if self.last_transition is not None:
-            transition_string = self.transition_strings[tuple(
-                self.last_transition)]
+            index = tuple(self.last_transition)
+            transition_string = self.transition_strings[self.transitions.index(index)]
             print('transition:', transition_string)
         if self.last_action is not None:
-            print('action:', self.action_strings[self.last_action])
+            index = tuple(self.last_action)
+            print('action:', self.transition_strings[self.transitions.index(index)])
         if self.last_reward is not None:
             print('Reward:', self.last_reward)
 

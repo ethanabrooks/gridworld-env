@@ -4,16 +4,23 @@ from gridworld_env import RandomGridWorld
 
 
 class LogicGridWorld(RandomGridWorld):
-    def __init__(self, objects, text_map, *args, **kwargs):
-        transitions = [[-1, 0, 0],
-                       [1, 0, 0],
-                       [0, 1, 0],
-                       [0, -1, 0],
+    def __init__(self, objects, text_map, random=None, *args, **kwargs):
+        transitions = [[0, 0, -1],
                        [0, 0, 1],
-                       [0, 0, -1]]
+                       [1, 0, 0],
+                       [-1, 0, 0],
+                       [0, 1, 0],
+                       [0, -1, 0]]
 
+        if random is None:
+            random = dict()
+        text_map = np.array(
+            [list(r) for r in text_map])  # type: np.ndarray
+        text_map = np.stack([np.zeros_like(text_map), text_map])
         super().__init__(*args, **kwargs,
-                         text_map=np.dstack([np.zeros_like(text_map), text_map]),
+                         random=random,
+                         reward=dict(),
+                         text_map=text_map,
                          transitions=transitions,
                          terminal=[], )
 
@@ -30,16 +37,9 @@ class LogicGridWorld(RandomGridWorld):
         colors = np.unique(self.desc[1])
         self.observation_tensor = np.expand_dims(self.desc[1], 2) == colors.reshape((1, 1, -1))
 
+    @property
     def transition_strings(self):
-        return {
-            (0, 0, 0):  '🛑',
-            (0, 1, 0):  '👉',
-            (1, 0, 0):  '👇',
-            (0, -1, 0): '👈',
-            (-1, 0, 0): '👆',
-            (0, 0, 1):  '👊',
-            (0, 0, -1): '✋',
-        }
+        return '🛑👉👇👈👆👊✋'
 
     def render_map(self, mode='human'):
         if self.last_transition is not None:
@@ -95,16 +95,20 @@ class LogicGridWorld(RandomGridWorld):
         return np.dstack([things_tensor, self.observation_tensor])
 
     def get_colors_for(self, objects):
-        contains_object = objects.reshape(1, 1, -1) == self.desc
+        objects_ = self.desc[1][np.isin(self.desc[0], objects)]
         import ipdb;
         ipdb.set_trace()
-        return np.broadcast_to(self.original_desc, contains_object.shape)[contains_object]
+        return objects_
 
     def reset(self):
         o = super().reset()
+        # randomize objects
+        random_states = self.np_random.randint(low=0, high=self.desc[0].size, size=self.objects.size)
+        self.assign(**{o: [s] for o, s in zip(self.objects.flatten(), random_states)})
+
         # task objects
-        self.task_color = np.random.choice(self.original_desc)
-        self.object_type = np.random.choice(len(self.objects))
+        self.task_color = self.np_random.choice(np.unique(self.original_desc[1]))
+        self.object_type = self.np_random.choice(len(self.objects))
         objects = self.objects[self.object_type]
         colors = self.get_colors_for(objects)
         self.task_objects = objects[colors == self.task_color]
