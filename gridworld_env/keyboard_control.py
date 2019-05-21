@@ -1,6 +1,6 @@
 import argparse
 import time
-
+import numpy as np
 import gym
 
 
@@ -11,6 +11,7 @@ def cli():
 
 
 def run(env, actions=None):
+    env.seed(0)
     action_map = dict()
     if actions is None:
         actions = dict(
@@ -21,18 +22,15 @@ def run(env, actions=None):
             x=[0, 0],
         )
     gridworld = env.unwrapped
-    transitions = [t[0] for t in gridworld.transitions]
+    transitions = np.stack([t[0] for t in gridworld.transitions])
     for letter, transition in actions.items():
-        try:
-            action_map[letter] = transitions.index(transition)
-        except ValueError:
-            pass
+        idx, = np.all(transitions == transition, axis=1).nonzero()
+        action_map[letter] = idx.item()
 
     env.reset()
     while True:
         env.render()
         s, r, t, i = env.step(action_map[input('act:')])
-        print(s)
         print('reward', r)
         if t:
             env.render()

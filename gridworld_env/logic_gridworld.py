@@ -1,24 +1,35 @@
 import numpy as np
+import six
+from gym.utils import colorize
+from gym.utils.colorize import color2num
 
 from gridworld_env import RandomGridWorld
 
 
 class LogicGridWorld(RandomGridWorld):
     def __init__(self, objects, text_map, random=None, *args, **kwargs):
-        transitions = [[0, 0, -1],
-                       [0, 0, 1],
-                       [1, 0, 0],
-                       [-1, 0, 0],
-                       [0, 1, 0],
-                       [0, -1, 0]]
+        transitions = np.array(
+            [
+                [0, 0, 0],
+                [1, 0, 0],
+                [-1, 0, 0],
+                [0, 1, 0],
+                [0, -1, 0],
+                [0, 0, -1],
+                [0, 0, 1],
+            ])
 
         if random is None:
             random = dict()
-        text_map = np.array(
+        self.colors_map = np.array(
             [list(r) for r in text_map])  # type: np.ndarray
-        text_map = np.stack([np.zeros_like(text_map), text_map])
+        blank = ' '
+        self.state_string = 'state'
+        text_map = np.full_like(self.colors_map, blank)
+        text_map = np.stack([text_map, text_map], axis=2)
         super().__init__(*args, **kwargs,
                          random=random,
+                         start=blank,
                          reward=dict(),
                          text_map=text_map,
                          transitions=transitions,
@@ -34,90 +45,88 @@ class LogicGridWorld(RandomGridWorld):
         self.target_color = None
         self.touched = set()
 
-        colors = np.unique(self.desc[1])
-        self.observation_tensor = np.expand_dims(self.desc[1], 2) == colors.reshape((1, 1, -1))
+        self.colors = np.unique(self.colors_map)
+        self.observation_tensor = np.expand_dims(self.colors_map, 2) == \
+                                  self.colors.reshape((1, 1, -1))
+        self.unique = np.append(self.objects.flatten(), self.state_string)
+
+    @property
+    def objects_level(self):
+        return self.desc[:, :, 0]
 
     @property
     def transition_strings(self):
-        return '🛑👉👇👈👆👊✋'
+        return np.array(list('🛑👇👆👉👈✋👊'))
 
     def render_map(self, mode='human'):
-        if self.last_transition is not None:
-            transition_string = LogicGridWorld.transition_strings[tuple(
-                self.last_transition)]
-
-            print(transition_string)
-        if self.last_reward is not None:
-            print('Reward:', self.last_reward)
-
-        colors = dict(
-            r='\e[41m',
-            g='\e[49m',
-            b='\e[44m',
-            y='\e[43m'
-        )
-
-        def get_string():
-            nrows, ncols = self.desc[1].shape
-            last_val = None
-            for i in range(nrows):
-                for j in range(ncols):
-                    val = self.desc[1][i, j]
-                    if val != last_val:
-                        yield colors[val]
-                        last_val = val
-                    yield self.desc[0][i, j]
-                yield '\n'
-
-        print(''.join(get_string()))
+        colors = dict(r='red', g='green', b='blue', y='yellow')
+        desc = self.desc.copy()
+        i, j, k = tuple(self.decode(self.s))
+        desc[i, j, 0] = '*'
+        levels = zip(self.colors_map, desc[:, :, 0], desc[:, :, 1])
+        for row0, row1, row2 in levels:
+            print(six.u('\x1b[30m'), end='')
+            last = None
+            for color, s1, s2 in zip(row0, row1, row2):
+                if color != last:
+                    color = colors[color]
+                    num = color2num[color] + 10
+                    highlight = six.u(str(num))
+                    print(six.u(f'\x1b[{highlight}m'), end='')
+                print(s1, end='')  # TODO
+                last = color
+            print(six.u('\x1b[0m'))
+        print(six.u('\x1b[39m'), end='')
 
     def step(self, a):
-        prev = self.decode(self.s)
         s, r, t, i = super().step(a)
-        maybe_object = self.desc[self.decode(s)]
-        if maybe_object in self.objects.flatten():
-            self.touched.add(maybe_object)
+        i, j, k = self.decode(s)
+        maybe_object = self.desc[i, j]
+        touching = np.isin(maybe_object, self.objects.flatten())
+        if np.any(touching):
+            import ipdb; ipdb.set_trace()
+            self.touched.add(maybe_object[touching])
         if not t:
             success = self.check_success()
             r = float(success)
             t = bool(success)
-
-        self.last_action = a
-        self.last_reward = r
-        self.last_transition = np.array(self.decode(s)) - np.array(prev)
         return self.get_observation(s), r, t, i
 
     def get_observation(self, s):
-        things = np.append(np.unique(self.desc), s)
-        things_tensor = np.expand_dims(self.desc, 3) == things.reshape((1, 1, 1, -1))
+        desc = self.desc.copy()
+        desc[tuple(self.decode(s))] = self.state_string
+        one_hots = np.expand_dims(self.desc, 3) == self.unique.reshape((1, 1, 1, -1))
+        h, w, _ = self.desc.shape
         import ipdb;
         ipdb.set_trace()
-        return np.dstack([things_tensor, self.observation_tensor])
+        return one_hots.reshape(h, w, -1).astype(int)  # TODO: color
 
     def get_colors_for(self, objects):
-        objects_ = self.desc[1][np.isin(self.desc[0], objects)]
-        import ipdb;
-        ipdb.set_trace()
-        return objects_
+        return self.colors_map[np.isin(self.objects_level, objects)]
 
     def reset(self):
         o = super().reset()
         # randomize objects
-        random_states = self.np_random.randint(low=0, high=self.desc[0].size, size=self.objects.size)
+        h, w, _ = self.desc.shape
+        random_coords = [
+            self.np_random.randint(low=0, high=h, size=self.objects.size)
+            for h in [h, w, 1]
+        ]
+        random_states = [self.encode(*c) for c in zip(*random_coords)]
         self.assign(**{o: [s] for o, s in zip(self.objects.flatten(), random_states)})
 
         # task objects
-        self.task_color = self.np_random.choice(np.unique(self.original_desc[1]))
+        self.task_color = self.np_random.choice(self.colors)
         self.object_type = self.np_random.choice(len(self.objects))
         objects = self.objects[self.object_type]
-        colors = self.get_colors_for(objects)
-        self.task_objects = objects[colors == self.task_color]
+        object_colors = self.get_colors_for(objects)
+        self.task_objects = objects[object_colors == self.task_color]
         self.task_objects.sort()
 
         # task type
-        self.task_type_idx = np.random.choice(len(self.task_types))
+        self.task_type_idx = self.np_random.choice(len(self.task_types))
         self.task_type = self.task_types[self.task_type_idx]
-        self.target_color = np.random.choice(self.original_desc)
+        self.target_color = self.np_random.choice(self.colors)
         self.touched = []
         return o
 

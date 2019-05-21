@@ -67,6 +67,7 @@ class GridWorld(DiscreteEnv):
             P=self.get_transitions(desc=text_map),
             isd=self.get_isd(desc=text_map),
         )
+        self.transition_array = np.stack([t[0] for t in self.transitions])
 
     @property
     def transition_strings(self):
@@ -159,12 +160,11 @@ class GridWorld(DiscreteEnv):
 
     def render(self, mode='human'):
         if self.last_transition is not None:
-            index = tuple(self.last_transition)
-            transition_string = self.transition_strings[self.transitions.index(index)]
-            print('transition:', transition_string)
+            idx = np.all(self.transition_array == self.last_transition, axis=1)
+            transition_string = self.transition_strings[idx]
+            print('transition:', transition_string.item())
         if self.last_action is not None:
-            index = tuple(self.last_action)
-            print('action:', self.transition_strings[self.transitions.index(index)])
+            print('action:', self.transition_strings[self.last_action].item())
         if self.last_reward is not None:
             print('Reward:', self.last_reward)
 

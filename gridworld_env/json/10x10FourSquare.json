@@ -1,18 +1,18 @@
 {
     "text_map": [
-        "rrrrrggggg",
-        "rrrrrggggg",
-        "rrrrrggggg",
-        "rrrrrggggg",
-        "rrrrrggggg",
-        "bbbbbyyyyy",
-        "bbbbbyyyyy",
-        "bbbbbyyyyy",
-        "bbbbbyyyyy",
-        "bbbbbyyyyy"
+        "rrrrrrgggggg",
+        "rrrrrrgggggg",
+        "rrrrrrgggggg",
+        "rrrrrrgggggg",
+        "rrrrrrgggggg",
+        "rrrrrrgggggg",
+        "bbbbbbyyyyyy",
+        "bbbbbbyyyyyy",
+        "bbbbbbyyyyyy",
+        "bbbbbbyyyyyy",
+        "bbbbbbyyyyyy",
+        "bbbbbbyyyyyy"
     ],
-    "start":
-    "rgby",
     "objects": [ ["1", "2", "3", "4" ]],
     "max_episode_steps":
     24,
