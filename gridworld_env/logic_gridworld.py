@@ -24,7 +24,7 @@ class LogicGridWorld(RandomGridWorld):
         self.colors_map = np.array(
             [list(r) for r in text_map])  # type: np.ndarray
         blank = ' '
-        self.state_string = 'state'
+        self.state_char = '🚡'
         text_map = np.full_like(self.colors_map, blank)
         text_map = np.stack([text_map, text_map], axis=2)
         super().__init__(*args, **kwargs,
@@ -46,9 +46,9 @@ class LogicGridWorld(RandomGridWorld):
         self.touched = set()
 
         self.colors = np.unique(self.colors_map)
-        self.observation_tensor = np.expand_dims(self.colors_map, 2) == \
+        self.colors_observation = np.expand_dims(self.colors_map, 2) == \
                                   self.colors.reshape((1, 1, -1))
-        self.unique = np.append(self.objects.flatten(), self.state_string)
+        self.unique = np.append(self.objects.flatten(), self.state_char)
 
     @property
     def objects_level(self):
@@ -59,6 +59,7 @@ class LogicGridWorld(RandomGridWorld):
         return np.array(list('🛑👇👆👉👈✋👊'))
 
     def render_map(self, mode='human'):
+        print('touched:', self.touched)
         colors = dict(r='red', g='green', b='blue', y='yellow')
         desc = self.desc.copy()
         i, j, k = tuple(self.decode(self.s))
@@ -84,8 +85,7 @@ class LogicGridWorld(RandomGridWorld):
         maybe_object = self.desc[i, j]
         touching = np.isin(maybe_object, self.objects.flatten())
         if np.any(touching):
-            import ipdb; ipdb.set_trace()
-            self.touched.add(maybe_object[touching])
+            self.touched.add(maybe_object[touching].item())
         if not t:
             success = self.check_success()
             r = float(success)
@@ -94,12 +94,11 @@ class LogicGridWorld(RandomGridWorld):
 
     def get_observation(self, s):
         desc = self.desc.copy()
-        desc[tuple(self.decode(s))] = self.state_string
-        one_hots = np.expand_dims(self.desc, 3) == self.unique.reshape((1, 1, 1, -1))
-        h, w, _ = self.desc.shape
-        import ipdb;
-        ipdb.set_trace()
-        return one_hots.reshape(h, w, -1).astype(int)  # TODO: color
+        desc[tuple(self.decode(s))] = self.state_char
+        one_hots = np.expand_dims(desc, 3) == self.unique.reshape((1, 1, 1, -1))
+        h, w, _ = desc.shape
+        objects_observation = one_hots.reshape(h, w, -1).astype(int)
+        return np.dstack([objects_observation, self.colors_observation])
 
     def get_colors_for(self, objects):
         return self.colors_map[np.isin(self.objects_level, objects)]
