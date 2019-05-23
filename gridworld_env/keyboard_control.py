@@ -16,7 +16,7 @@ def run(env, actions=None):
         actions = 'wsadx'
     actions = list(actions)
 
-    env.reset()
+    s = env.reset()
     while True:
         env.render()
         action = None
