@@ -1,6 +1,6 @@
 import argparse
 import time
-import numpy as np
+
 import gym
 
 
@@ -22,6 +22,8 @@ def run(env, actions=None):
         action = None
         while action not in actions:
             action = input('act:')
+            if action == 'p':
+                import ipdb; ipdb.set_trace()
 
         s, r, t, i = env.step(actions.index(action))
         print('reward', r)

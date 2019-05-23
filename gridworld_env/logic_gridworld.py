@@ -1,6 +1,7 @@
 import gym
 import numpy as np
 import six
+from gym import spaces
 from gym.utils import seeding
 from gym.utils.colorize import color2num
 
@@ -56,6 +57,10 @@ class LogicGridWorld(gym.Env):
         self.task_type = None
         self.target_color = None
         self.pos = None
+
+        self.randomize_positions()
+        self.observation_space = spaces.Box(low=0, high=1, shape=self.get_observation().shape)
+        self.action_space = spaces.Discrete(len(self.transitions) + 1)
 
     @property
     def transition_strings(self):
@@ -173,7 +178,7 @@ class LogicGridWorld(gym.Env):
                 idx = touching.argmax()
                 if self.object_grasped[idx]:
                     self.object_grasped[idx] = 0
-                if not any(self.object_grasped):
+                elif not any(self.object_grasped):
                     self.object_grasped[idx] = 1
 
         self.touched[touching] = True
@@ -192,35 +197,44 @@ class LogicGridWorld(gym.Env):
 
         return self.get_observation(), r, t, {}
 
-    def reset(self):
-        self.object_grasped = np.zeros_like(self.objects, dtype=bool)
-        self.touched = np.zeros_like(self.objects, dtype=bool)
-
-        # randomize objects
+    def randomize_positions(self):
         randoms = self.np_random.choice(self.background.size,
                                         replace=False,
                                         size=self.objects.size + 1, )
         self.pos, *self.objects_pos = zip(*np.unravel_index(randoms, self.background.shape))
         self.objects_pos = np.array(self.objects_pos)
 
-        # task objects
-        self.task_color = self.np_random.choice(self.colors)
-        self.object_type = self.np_random.choice(len(self.objects_list))
-        objects = self.objects_list[self.object_type]
-        object_colors = self.get_colors_for(objects)
-        self.task_objects = objects[object_colors == self.task_color]
-        self.task_objects.sort()
+    def reset(self):
+        self.object_grasped = np.zeros_like(self.objects, dtype=bool)
+        self.touched = np.zeros_like(self.objects, dtype=bool)
+        self.randomize_positions()
 
         # task type
         self.task_type = self.np_random.choice(self.task_types)
-        self.target_color = self.np_random.choice(self.colors)
+
+        # task objects
+        self.object_type = self.np_random.choice(len(self.objects_list))
+        objects = self.objects_list[self.object_type]
+        object_colors = self.get_colors_for(objects)
+        self.task_color = self.np_random.choice(np.unique(object_colors))  # exclude empty colors
+        self.task_objects = objects[object_colors == self.task_color]
+        self.task_objects.sort()
+
+        target_choices = self.colors
+        task_obj_colors = self.get_colors_for(self.task_objects)
+        if self.task_type == 'move' and task_obj_colors.size == 1:
+            target_choices = target_choices[target_choices != task_obj_colors.item()]
+        self.target_color = self.np_random.choice(target_choices)
+
         return self.get_observation()
 
 
 if __name__ == '__main__':
     import gym
-    from gridworld_env.keyboard_control import run
+    import gridworld_env.keyboard_control
+    import gridworld_env.random_walk
 
     env = gym.make('4x4FourSquareGridWorld-v0')
     actions = 'wsadx'
-    run(env, actions=actions)
+    gridworld_env.keyboard_control.run(env, actions=actions)
+    # gridworld_env.random_walk.run(env)

@@ -14,13 +14,13 @@ def run(env):
     env.reset()
     while True:
         env.render()
-        time.sleep(.5)
+        # time.sleep(.5)
         s, r, t, i = env.step(env.action_space.sample())
         print('reward', r)
         if t:
             env.render()
             print('resetting')
-            time.sleep(1)
+            # time.sleep(1)
             env.reset()
             print()
 
