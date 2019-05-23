@@ -14,14 +14,16 @@ def run(env, actions=None):
     env.seed(1)
     if actions is None:
         actions = 'wsadx'
+    actions = list(actions)
 
     env.reset()
     while True:
         env.render()
-        unwrapped = env.unwrapped
-        import ipdb; ipdb.set_trace()
-        unwrapped.get_observation()
-        s, r, t, i = env.step(actions.index(input('act:')))
+        action = None
+        while action not in actions:
+            action = input('act:')
+
+        s, r, t, i = env.step(actions.index(action))
         print('reward', r)
         if t:
             env.render()

@@ -5,7 +5,14 @@ from gym.utils import seeding
 from gym.utils.colorize import color2num
 
 
-def index(array, idxs):
+def set_index(array, idxs, value):
+    idxs = np.array(idxs)
+    if idxs.size > 0:
+        array[tuple(idxs.T)] = value
+
+
+def get_index(array, idxs):
+    idxs = np.array(idxs)
     if idxs.size == 0:
         return np.array([], array.dtype)
     return array[tuple(idxs.T)]
@@ -68,8 +75,8 @@ class LogicGridWorld(gym.Env):
 
         desc = np.full_like(self.background, ' ')
 
-        desc[tuple(self.pos)] = self.state_char
-        desc[tuple(self.objects_pos.T)] = self.objects
+        set_index(desc, self.pos, self.state_char)
+        set_index(desc, self.objects_pos, self.objects)
         touching = self.objects[self.touching()]
         for back_row, front_row in zip(self.background, desc):
             print(six.u('\x1b[30m'), end='')
@@ -105,14 +112,16 @@ class LogicGridWorld(gym.Env):
     def get_observation(self):
         h, w, = self.background.shape
         objects_one_hot = np.zeros((h, w, self.objects.size), dtype=bool)
-        objects_one_hot[tuple(self.objects_pos.T)] = True
+        idx = np.hstack([self.objects_pos,
+                         np.expand_dims(np.arange(self.objects.size), 1)])
+        set_index(objects_one_hot, idx, True)
 
         grasped_one_hot = np.zeros_like(self.background, dtype=bool)
         grasped_pos = self.objects_pos[self.object_grasped]
-        grasped_one_hot[tuple(grasped_pos)] = True
+        set_index(grasped_one_hot, grasped_pos, True)
 
         agent_one_hot = np.zeros_like(self.background, dtype=bool)
-        agent_one_hot[tuple(self.pos)] = True
+        set_index(agent_one_hot, self.pos, True)
 
         obs = [self.one_hot_background, objects_one_hot, grasped_one_hot, agent_one_hot]
         if not self.partial_obs:
@@ -131,10 +140,10 @@ class LogicGridWorld(gym.Env):
             todo = np.isin(self.objects, todo_objects)
             todo_pos = self.objects_pos[todo]
             if todo_pos.size > 0:
-                todo_one_hot[tuple(todo_pos.T)] = True
+                set_index(todo_one_hot, todo_pos, True)
             obs += [dest_one_hot, todo_one_hot]
 
-        return np.dstack(obs)
+        return np.dstack(obs).astype(float)
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -144,7 +153,7 @@ class LogicGridWorld(gym.Env):
         idxs = np.isin(self.objects, objects)
         if idxs.size == 0:
             return np.array([], self.background.dtype)
-        return self.background[tuple(self.objects_pos[idxs].T)]
+        return get_index(self.background, self.objects_pos[idxs])
 
     def step(self, a):
         n_transitions = len(self.transitions)
@@ -162,7 +171,10 @@ class LogicGridWorld(gym.Env):
             touching = self.touching()
             if any(touching):
                 idx = touching.argmax()
-                self.object_grasped[idx] = not self.object_grasped[idx]  # toggle
+                if self.object_grasped[idx]:
+                    self.object_grasped[idx] = 0
+                if not any(self.object_grasped):
+                    self.object_grasped[idx] = 1
 
         self.touched[touching] = True
 
