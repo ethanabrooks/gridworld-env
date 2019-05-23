@@ -20,7 +20,7 @@ def get_index(array, idxs):
 
 
 class LogicGridWorld(gym.Env):
-    def __init__(self, objects, text_map, partial_obs=True):
+    def __init__(self, objects, text_map, partial_obs=False):
         super().__init__()
 
         self.partial_obs = partial_obs
@@ -130,7 +130,6 @@ class LogicGridWorld(gym.Env):
 
         obs = [self.one_hot_background, objects_one_hot, grasped_one_hot, agent_one_hot]
         if not self.partial_obs:
-            h, w = self.background.shape
             dest_one_hot = np.zeros((h, w, self.colors.size + 1))
             todo_one_hot = np.zeros_like(self.background)
             if self.task_type == 'touch':
@@ -148,7 +147,7 @@ class LogicGridWorld(gym.Env):
                 set_index(todo_one_hot, todo_pos, True)
             obs += [dest_one_hot, todo_one_hot]
 
-        return np.dstack(obs).astype(float)
+        return np.dstack(obs).astype(float).flatten() # TODO
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
