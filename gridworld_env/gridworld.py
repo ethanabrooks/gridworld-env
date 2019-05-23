@@ -10,12 +10,13 @@ import numpy as np
 from gym import utils
 from six import StringIO
 
+from gridworld_env.abstract_gridworld import AbstractGridWorld
 from gridworld_env.discrete import DiscreteEnv
 
 Transition = namedtuple('Transition', 'probability new_state reward terminal')
 
 
-class GridWorld(DiscreteEnv):
+class GridWorld(AbstractGridWorld, DiscreteEnv):
     def __init__(
             self,
             text_map: Iterable[Iterable[str]],

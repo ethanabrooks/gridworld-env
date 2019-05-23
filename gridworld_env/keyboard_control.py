@@ -11,26 +11,17 @@ def cli():
 
 
 def run(env, actions=None):
-    env.seed(0)
-    action_map = dict()
+    env.seed(1)
     if actions is None:
-        actions = dict(
-            w=[-1, 0],
-            s=[1, 0],
-            a=[0, -1],
-            d=[0, 1],
-            x=[0, 0],
-        )
-    gridworld = env.unwrapped
-    transitions = np.stack([t[0] for t in gridworld.transitions])
-    for letter, transition in actions.items():
-        idx, = np.all(transitions == transition, axis=1).nonzero()
-        action_map[letter] = idx.item()
+        actions = 'wsadx'
 
     env.reset()
     while True:
         env.render()
-        s, r, t, i = env.step(action_map[input('act:')])
+        unwrapped = env.unwrapped
+        import ipdb; ipdb.set_trace()
+        unwrapped.get_observation()
+        s, r, t, i = env.step(actions.index(input('act:')))
         print('reward', r)
         if t:
             env.render()
